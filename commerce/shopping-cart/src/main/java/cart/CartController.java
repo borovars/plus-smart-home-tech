@@ -18,7 +18,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CartController implements CartFeignClient {
-    CartService service;
+
+    private final CartService service;
 
     @Override
     public ShoppingCartDto get(String username) throws NotAuthorizedUserException {

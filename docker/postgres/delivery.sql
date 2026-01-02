@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS address (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id UUID PRIMARY KEY,
     country VARCHAR(255),
     city VARCHAR(255),
     street VARCHAR(255),
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS address (
 );
 
 CREATE TABLE IF NOT EXISTS order_delivery (
-    id UUID DEFAULT gen_random_uuid() primary key,
+    id UUID primary key,
     total_volume BIGINT,
     total_weight BIGINT,
     fragile BOOLEAN,

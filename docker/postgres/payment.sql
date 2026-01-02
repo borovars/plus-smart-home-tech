@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS payments (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id UUID PRIMARY KEY,
     order_id UUID NOT NULL,
     products_total DECIMAL,
     delivery_total DECIMAL,

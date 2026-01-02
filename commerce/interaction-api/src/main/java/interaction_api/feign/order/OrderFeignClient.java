@@ -6,6 +6,9 @@ import java.util.UUID;
 import interaction_api.feign.cb.OrderClientFallback;
 import interaction_api.feign.order.model.CreateNewOrderRequest;
 import interaction_api.feign.order.model.OrderDto;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +17,10 @@ import org.springframework.web.bind.annotation.*;
 public interface OrderFeignClient {
 
     @GetMapping
-    List<OrderDto> getClientOrders(@RequestParam String userName);
+    List<OrderDto> getClientOrders(@RequestParam @NotBlank String userName);
 
     @PutMapping
-    OrderDto createNewOrder(@RequestBody CreateNewOrderRequest request, @RequestParam String userName);
+    OrderDto createNewOrder(@RequestBody @Valid @NotNull CreateNewOrderRequest request, @RequestParam @NotBlank String userName);
 
     @PostMapping("/payment")
     OrderDto payment(@RequestBody UUID orderId);

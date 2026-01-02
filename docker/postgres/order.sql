@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS address (
-    id uuid default gen_random_uuid() PRIMARY KEY,
+    id UUID PRIMARY KEY,
     country VARCHAR(255),
     city VARCHAR(255),
     street VARCHAR(255),
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS address (
 );
 
 CREATE TABLE IF NOT EXISTS orders (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id UUID PRIMARY KEY,
     user_name VARCHAR(255),
     order_state VARCHAR(50),
     shopping_cart_id UUID,
