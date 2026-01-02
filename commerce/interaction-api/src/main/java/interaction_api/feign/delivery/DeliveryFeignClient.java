@@ -5,28 +5,28 @@ import java.util.UUID;
 import interaction_api.feign.cb.DeliveryClientFallback;
 import interaction_api.feign.delivery.model.DeliveryDto;
 import interaction_api.feign.order.model.OrderDto;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-@FeignClient(name = "delivery", fallback = DeliveryClientFallback.class)
-@RequestMapping("/api/v1/delivery")
+@FeignClient(name = "delivery",path = "/api/v1/delivery", fallback = DeliveryClientFallback.class)
 public interface DeliveryFeignClient {
 
     @PutMapping
-    DeliveryDto planDelivery(@RequestBody DeliveryDto deliveryDto);
+    DeliveryDto planDelivery(@RequestBody @Valid @NotNull DeliveryDto deliveryDto);
 
     @PostMapping("/successful")
-    void deliverySuccessful(@RequestBody UUID deliveryId);
+    void deliverySuccessful(@RequestBody @NotNull UUID deliveryId);
 
     @PostMapping("/picked")
-    void deliveryPicked(UUID deliveryId);
+    void deliveryPicked(@NotNull UUID deliveryId);
 
     @PostMapping("/failed")
-    void deliveryFailed(UUID deliveryId);
+    void deliveryFailed(@NotNull UUID deliveryId);
 
     @PostMapping("/cost")
-    Double deliveryCost(OrderDto orderDto);
+    Double deliveryCost(@Valid @NotNull OrderDto orderDto);
 }

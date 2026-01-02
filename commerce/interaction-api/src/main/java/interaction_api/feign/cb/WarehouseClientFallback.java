@@ -35,7 +35,7 @@ public class WarehouseClientFallback implements WarehouseFeignClient {
     }
 
     @Override
-    public void acceptReturn(Map<UUID, Long> products) {
+    public void acceptReturn(Map<UUID, Integer> products) {
         throw new ServiceFallBackException(FALLBACK_MESSAGE.toString());
     }
 

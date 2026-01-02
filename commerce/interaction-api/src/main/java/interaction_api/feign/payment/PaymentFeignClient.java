@@ -5,27 +5,27 @@ import java.util.UUID;
 import interaction_api.feign.cb.PaymentClientFallback;
 import interaction_api.feign.order.model.OrderDto;
 import interaction_api.feign.payment.model.PaymentDto;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-@FeignClient(name = "payment", fallback = PaymentClientFallback.class)
-@RequestMapping("/api/v1/payment")
+@FeignClient(name = "payment", path = "/api/v1/payment", fallback = PaymentClientFallback.class)
 public interface PaymentFeignClient {
 
     @PostMapping
-    PaymentDto processPayment(@RequestBody OrderDto orderDto);
+    PaymentDto processPayment(@RequestBody @Valid @NotNull OrderDto orderDto);
 
     @PostMapping("/totalCost")
-    Double getTotalCost(@RequestBody OrderDto orderDto);
+    Double getTotalCost(@RequestBody @Valid @NotNull OrderDto orderDto);
 
     @PostMapping("/refund")
-    void paymentSuccess(@RequestBody UUID paymentId);
+    void paymentSuccess(@RequestBody @NotNull UUID paymentId);
 
     @PostMapping("/productCost")
-    Double getProductsCost(@RequestBody OrderDto orderDto);
+    Double getProductsCost(@RequestBody @Valid @NotNull OrderDto orderDto);
 
     @PostMapping("/failed")
-    void paymentFailed(@RequestBody UUID paymentId);
+    void paymentFailed(@RequestBody @NotNull UUID paymentId);
 }

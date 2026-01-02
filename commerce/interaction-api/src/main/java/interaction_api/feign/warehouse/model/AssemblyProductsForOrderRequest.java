@@ -13,7 +13,7 @@ import lombok.ToString;
 public class AssemblyProductsForOrderRequest {
 
     @NotNull
-    private Map<UUID, Long> products;
+    private Map<UUID, Integer> products;
 
     @NotNull
     private UUID orderId;

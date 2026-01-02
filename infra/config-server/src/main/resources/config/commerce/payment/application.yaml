@@ -12,3 +12,6 @@ spring:
   sql:
     init:
       mode: always
+
+payment:
+  vatRate: 0.1

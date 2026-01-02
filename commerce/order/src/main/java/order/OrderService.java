@@ -2,21 +2,28 @@ package order;
 
 
 import interaction_api.common.exception.NoOrderFoundException;
+import interaction_api.feign.delivery.DeliveryFeignClient;
 import interaction_api.feign.delivery.model.DeliveryDto;
 import interaction_api.feign.delivery.model.DeliveryState;
 import interaction_api.feign.order.model.CreateNewOrderRequest;
 import interaction_api.feign.order.model.OrderDto;
 import interaction_api.feign.order.model.OrderState;
 import interaction_api.feign.order.model.ProductReturnRequest;
+import interaction_api.feign.payment.PaymentFeignClient;
 import interaction_api.feign.payment.model.PaymentDto;
+import interaction_api.feign.warehouse.WarehouseFeignClient;
 import interaction_api.feign.warehouse.model.AddressDto;
 import interaction_api.feign.warehouse.model.AssemblyProductsForOrderRequest;
 import interaction_api.feign.warehouse.model.BookedProductsDto;
+import interaction_api.feign.warehouse.model.exception.NoSpecifiedProductInWarehouseException;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import order.model.Order;
 import org.springframework.stereotype.Service;
@@ -26,13 +33,14 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderService {
 
-    private final OrderRepository orderRepository;
-    private final OrderMapper orderMapper;
-    private final PaymentClient paymentClient;
-    private final DeliveryClient deliveryClient;
-    private final WarehouseClient warehouseClient;
+    OrderRepository orderRepository;
+    OrderMapper orderMapper;
+    PaymentFeignClient paymentClient;
+    DeliveryFeignClient deliveryClient;
+    WarehouseFeignClient warehouseClient;
 
     public List<OrderDto> getClientOrders(String userName) {
         log.info("Запрос заказов клиента {}", userName);
@@ -43,11 +51,11 @@ public class OrderService {
                 .map(orderMapper::toDto).toList();
     }
 
-    public OrderDto createNewOrder(CreateNewOrderRequest request, String userName) {
+    public OrderDto createNewOrder(CreateNewOrderRequest request, String userName) throws NoSpecifiedProductInWarehouseException {
         log.info("Запрос на создание нового заказа для пользователя {}", userName);
 
         checkUser(userName);
-        BookedProductsDto bookedProductsDto = warehouseClient.checkQuantity(request.getShoppingCart());
+        BookedProductsDto bookedProductsDto = warehouseClient.check(request.getShoppingCart());
         log.debug("Booked products for order: {}", bookedProductsDto);
         Order order = orderMapper.toEntity(request, userName, bookedProductsDto);
         orderRepository.save(order);
@@ -96,7 +104,7 @@ public class OrderService {
         log.info("Запрос доставки заказа {}", orderId);
 
         Order order = checkAndReturnOrder(orderId);
-        AddressDto addressFrom = warehouseClient.getWarehouseAddress();
+        AddressDto addressFrom = warehouseClient.get();
         DeliveryDto deliveryDto = DeliveryDto.builder()
                 .orderId(orderId)
                 .deliveryState(DeliveryState.CREATED)
@@ -135,7 +143,7 @@ public class OrderService {
         Order order = checkAndReturnOrder(orderId);
         Double totalCost = paymentClient.getTotalCost(orderMapper.toDto(order));
         order.setTotalPrice(totalCost);
-        log.info("Total cost for order {} is {}", orderId, totalCost);
+        log.info("Общая цена заказа {} составляет {}", orderId, totalCost);
 
         return orderMapper.toDto(order);
     }
@@ -154,7 +162,7 @@ public class OrderService {
 
         Order order = checkAndReturnOrder(orderId);
         AssemblyProductsForOrderRequest assemblyRequest = orderMapper.toAssemblyRequest(order);
-        BookedProductsDto bookedProductsDto = warehouseClient.assemblyProductsForOrder(assemblyRequest);
+        BookedProductsDto bookedProductsDto = warehouseClient.assemblyProducts(assemblyRequest);
         order.setDeliveryVolume(bookedProductsDto.getDeliveryVolume());
         order.setDeliveryWeight(bookedProductsDto.getDeliveryWeight());
         order.setIsFragile(bookedProductsDto.getIsFragile());

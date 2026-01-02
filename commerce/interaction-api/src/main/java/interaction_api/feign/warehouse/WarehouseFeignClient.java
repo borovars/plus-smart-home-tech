@@ -1,18 +1,19 @@
 package interaction_api.feign.warehouse;
 
 import interaction_api.feign.cart.model.ShoppingCartDto;
+import interaction_api.feign.cb.WarehouseClientFallback;
 import interaction_api.feign.warehouse.model.*;
 import interaction_api.feign.warehouse.model.exception.NoSpecifiedProductInWarehouseException;
 import interaction_api.feign.warehouse.model.exception.SpecifiedProductAlreadyInWarehouseException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
 
-@FeignClient(name = "warehouse")
-@RequestMapping("/api/v1/warehouse")
+@FeignClient(name = "warehouse", path = "/api/v1/warehouse", fallback = WarehouseClientFallback.class)
 public interface WarehouseFeignClient {
 
     @PutMapping
@@ -28,11 +29,11 @@ public interface WarehouseFeignClient {
     AddressDto get();
 
     @PostMapping("/return")
-    void acceptReturn(@RequestBody Map<UUID, Long> products);
+    void acceptReturn(@RequestBody Map<UUID, Integer> products);
 
     @PostMapping("/shipped")
-    void shippedToDelivery(@RequestBody ShippedToDeliveryRequest request);
+    void shippedToDelivery(@RequestBody @Valid @NotNull ShippedToDeliveryRequest request);
 
     @PostMapping("/assembly")
-    BookedProductsDto assemblyProducts(@RequestBody AssemblyProductsForOrderRequest request);
+    BookedProductsDto assemblyProducts(@RequestBody @Valid @NotNull AssemblyProductsForOrderRequest request);
 }
