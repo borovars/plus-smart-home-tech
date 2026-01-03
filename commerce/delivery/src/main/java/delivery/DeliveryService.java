@@ -49,7 +49,9 @@ public class DeliveryService {
         delivery.setDeliveryState(DeliveryState.DELIVERED);
 
         log.info("Изменение статуса доставки {} успешно выполнено", deliveryId);
-        orderClient.delivery(delivery.getOrderId());
+        log.debug("Вызов orderClient.delivery с данными: {}", delivery.getOrderId());
+        OrderDto response = orderClient.delivery(delivery.getOrderId());
+        log.debug("Ответ от orderClient: {}", response);
     }
 
     public void deliveryPicked(UUID deliveryId) {
@@ -59,7 +61,9 @@ public class DeliveryService {
         delivery.setDeliveryState(DeliveryState.IN_PROGRESS);
 
         log.info("Состояние доставки {} успешно изменено на IN_PROGRESS", deliveryId);
-        orderClient.assembly(delivery.getOrderId());
+        log.debug("Вызов orderClient.assembly с данными: {}", delivery.getOrderId());
+        OrderDto response = orderClient.assembly(delivery.getOrderId());
+        log.debug("Ответ от orderClient: {}", response);
     }
 
     public void deliveryFailed(UUID deliveryId) {
@@ -69,7 +73,9 @@ public class DeliveryService {
         delivery.setDeliveryState(DeliveryState.FAILED);
 
         log.info("Состояние доставки {} успешно изменено на FAILED", deliveryId);
-        orderClient.deliveryFailed(delivery.getOrderId());
+        log.debug("Вызов orderClient.deliveryFailed с данными: {}", delivery.getOrderId());
+        OrderDto response = orderClient.deliveryFailed(delivery.getOrderId());
+        log.debug("Ответ от orderClient: {}", response);
     }
 
     public Double deliveryCost(OrderDto orderDto) {
@@ -78,7 +84,7 @@ public class DeliveryService {
         double deliveryCost = BASE_PRICE;
 
         Delivery delivery = deliveryRepository.findByOrderId(orderDto.getDeliveryId())
-                .orElseThrow(() -> new NoDeliveryFoundException("Delivery with id %s for order with id %s not found"
+                .orElseThrow(() -> new NoDeliveryFoundException("Доставка с id %s для заказа с id %s не найдена"
                         .formatted(orderDto.getDeliveryId(), orderDto.getOrderId())));
 
         delivery.setFragile(orderDto.getFragile());

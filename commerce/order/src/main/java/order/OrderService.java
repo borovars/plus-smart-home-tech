@@ -16,7 +16,6 @@ import interaction_api.feign.warehouse.model.AddressDto;
 import interaction_api.feign.warehouse.model.AssemblyProductsForOrderRequest;
 import interaction_api.feign.warehouse.model.BookedProductsDto;
 import interaction_api.feign.warehouse.model.exception.NoSpecifiedProductInWarehouseException;
-import jakarta.transaction.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +26,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import order.model.Order;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Slf4j
@@ -42,6 +42,7 @@ public class OrderService {
     DeliveryFeignClient deliveryClient;
     WarehouseFeignClient warehouseClient;
 
+    @Transactional(readOnly = true)
     public List<OrderDto> getClientOrders(String userName) {
         log.info("Запрос заказов клиента {}", userName);
 
@@ -55,8 +56,9 @@ public class OrderService {
         log.info("Запрос на создание нового заказа для пользователя {}", userName);
 
         checkUser(userName);
+        log.debug("Вызов warehouseClient.check с данными: {}", request.getShoppingCart());
         BookedProductsDto bookedProductsDto = warehouseClient.check(request.getShoppingCart());
-        log.debug("Booked products for order: {}", bookedProductsDto);
+        log.debug("Ответ от warehouseClient: {}", bookedProductsDto);
         Order order = orderMapper.toEntity(request, userName, bookedProductsDto);
         orderRepository.save(order);
 
@@ -68,10 +70,12 @@ public class OrderService {
         log.info("Запрос на возврат товара {}", request.getOrderId());
 
         Order order = checkAndReturnOrder(request.getOrderId());
+        log.debug("Вызов warehouseClient.acceptReturn с данными: {}", order.getProducts());
         warehouseClient.acceptReturn(order.getProducts());
-        log.info("Заказ {} успешно возвращен", order);
+        log.debug("Заказ {} успешно возвращен", order);
         order.setState(OrderState.PRODUCT_RETURNED);
 
+        log.info("Заказ {} успешно возвращен", order.getId());
         return orderMapper.toDto(order);
     }
 
@@ -79,7 +83,9 @@ public class OrderService {
         log.info("Запрос оплаты заказа {} ", orderId);
 
         Order order = checkAndReturnOrder(orderId);
+        log.debug("Вызов paymentClient.processPayment с данными: {}", orderMapper.toDto(order));
         PaymentDto paymentDto = paymentClient.processPayment(orderMapper.toDto(order));
+        log.debug("Ответ от paymentClient: {}", paymentDto);
         order.setPaymentId(paymentDto.getPaymentId());
         order.setState(OrderState.ON_PAYMENT);
 
@@ -104,15 +110,18 @@ public class OrderService {
         log.info("Запрос доставки заказа {}", orderId);
 
         Order order = checkAndReturnOrder(orderId);
+        log.debug("Вызов warehouseClient.get");
         AddressDto addressFrom = warehouseClient.get();
+        log.debug("Ответ от warehouseClient: {}", addressFrom);
         DeliveryDto deliveryDto = DeliveryDto.builder()
                 .orderId(orderId)
                 .deliveryState(DeliveryState.CREATED)
                 .toAddress(orderMapper.toAddressDto(order.getDeliveryAddress()))
                 .fromAddress(addressFrom)
                 .build();
+        log.debug("Вызов deliveryClient.planDelivery c данными {}", deliveryDto);
         deliveryDto = deliveryClient.planDelivery(deliveryDto);
-        log.debug("Детали доставки: {}", deliveryDto);
+        log.debug("Ответ от deliveryClient: {}", deliveryDto);
         order.setDeliveryId(deliveryDto.getDeliveryId());
         order.setState(OrderState.ON_DELIVERY);
 
@@ -141,7 +150,9 @@ public class OrderService {
     public OrderDto calculateTotalCost(UUID orderId) {
 
         Order order = checkAndReturnOrder(orderId);
+        log.debug("Вызов paymentClient.getTotalCost c данными {}", orderMapper.toDto(order));
         Double totalCost = paymentClient.getTotalCost(orderMapper.toDto(order));
+        log.debug("Ответ от paymentClient: {}", totalCost);
         order.setTotalPrice(totalCost);
         log.info("Общая цена заказа {} составляет {}", orderId, totalCost);
 
@@ -149,9 +160,12 @@ public class OrderService {
     }
 
     public OrderDto calculateDeliveryCost(UUID orderId) {
+        log.info("Запрос расчета стоимости доставки заказа {}", orderId);
 
         Order order = checkAndReturnOrder(orderId);
+        log.debug("Вызов deliveryClient.deliveryCost c данными {}", orderMapper.toDto(order));
         Double deliveryCost = deliveryClient.deliveryCost(orderMapper.toDto(order));
+        log.debug("Ответ от deliveryClient: {}", deliveryCost);
         order.setDeliveryPrice(deliveryCost);
         log.info("Стоимость доставки для заказа {} составляет {}", orderId, deliveryCost);
 
@@ -159,10 +173,13 @@ public class OrderService {
     }
 
     public OrderDto assembly(UUID orderId) {
+        log.info("Запрос сборки заказа {}", orderId);
 
         Order order = checkAndReturnOrder(orderId);
         AssemblyProductsForOrderRequest assemblyRequest = orderMapper.toAssemblyRequest(order);
+        log.debug("Вызов warehouseClient.assemblyProducts c данными {}", assemblyRequest);
         BookedProductsDto bookedProductsDto = warehouseClient.assemblyProducts(assemblyRequest);
+        log.debug("Ответ от warehouseClient: {}", bookedProductsDto);
         order.setDeliveryVolume(bookedProductsDto.getDeliveryVolume());
         order.setDeliveryWeight(bookedProductsDto.getDeliveryWeight());
         order.setIsFragile(bookedProductsDto.getIsFragile());

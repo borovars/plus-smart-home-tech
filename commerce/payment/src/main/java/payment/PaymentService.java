@@ -7,8 +7,7 @@ import interaction_api.feign.order.model.OrderDto;
 import interaction_api.feign.payment.model.PaymentDto;
 import interaction_api.feign.payment.model.PaymentState;
 import interaction_api.feign.store.StoreFeignClient;
-import interaction_api.feign.store.model.exception.ProductNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,23 +20,15 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentService {
 
-    PaymentRepository paymentRepository;
-    PaymentMapper paymentMapper;
-    StoreFeignClient shoppingStoreClient;
-    OrderFeignClient orderClient;
+    private final PaymentRepository paymentRepository;
+    private final PaymentMapper paymentMapper;
+    private final StoreFeignClient shoppingStoreClient;
+    private final OrderFeignClient orderClient;
 
-    //@Value("${payment.vatRate:0.1}")
-    private double vatRate = 0.1;
-    /* Здесь проблема коэффициентом. Если оставить его значение в конфиге, то оно не
-    читается и приложение падает с ошибкой:
-    Parameter 4 of constructor in payment.PaymentService required a bean of type 'double' that could not be found.
-    Странное поведение, исправить не удалось*/
-    /* Еще почему-то спринг жалуется, что нельзя использовать аннотации @RequestMapping и @FeignClient одновременно,
-    поэтому я в некоторых клиентах убрал @RequestMapping и перенес путь, хотя в прошлом спринте все было в порядке
-     */
+    @Value("${payment.vatRate:0.1}")
+    double vatRate;
 
     @Transactional
     public PaymentDto processPayment(OrderDto order) {
@@ -67,14 +58,18 @@ public class PaymentService {
 
     @Transactional
     public void emulatePaymentSuccess(UUID paymentId) {
+        log.info("Эмуляция успешной оплаты {}", paymentId);
 
         Payment payment = checkPayment(paymentId);
         payment.setPaymentState(PaymentState.SUCCESS);
 
         log.info("Изменение статуса оплаты на успешное, id оплаты: {}", paymentId);
+        log.debug("Вызов orderClient.payment c данными {}", payment.getOrderId());
         orderClient.payment(payment.getOrderId());
+        log.debug("Эмуляция успешной оплаты успешно выполнена");
     }
 
+    @Transactional(readOnly = true)
     public Double getProductsCost(OrderDto order) {
         log.info("Запрос суммы заказа {}", order.getOrderId());
 
@@ -85,10 +80,14 @@ public class PaymentService {
     }
 
     public void emulatePaymentFailed(UUID paymentId) {
+        log.info("Эмуляция НЕ успешной оплаты {}", paymentId);
+
         Payment payment = checkPayment(paymentId);
         payment.setPaymentState(PaymentState.FAILED);
         log.info("Оплата не прошла, изменение состояния на неудачное id оплаты: {}", paymentId);
+        log.debug("Вызов orderClient.paymentFailed c данными {}", payment.getOrderId());
         orderClient.paymentFailed(payment.getOrderId());
+        log.debug("Эмуляция НЕ успешной оплаты успешно выполнена");
     }
 
     private void checkOrder(OrderDto order) {
