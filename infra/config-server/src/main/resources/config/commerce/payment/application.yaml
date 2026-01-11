@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: "jdbc:postgresql://localhost:6537/payment"
+    username: payment
+    password: payment
+    driver-class-name: "org.postgresql.Driver"
+  jpa:
+    hibernate:
+      ddl-auto: create
+      dialect: "org.hibernate.dialect.PostgreSQLDialect"
+    show-sql: false
+  sql:
+    init:
+      mode: always
+
+payment:
+  vatRate: 0.1

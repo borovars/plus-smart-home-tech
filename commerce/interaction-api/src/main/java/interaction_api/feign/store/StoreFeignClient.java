@@ -1,5 +1,6 @@
 package interaction_api.feign.store;
 
+import interaction_api.feign.cb.StoreClientFallback;
 import interaction_api.feign.store.model.ProductDto;
 import interaction_api.feign.store.model.SetProductQuantitySetRequest;
 import interaction_api.feign.store.model.enums.ProductCategory;
@@ -12,9 +13,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
-
-@FeignClient(name = "shopping-store")
-@RequestMapping("/api/v1/shopping-store")
+@FeignClient(name = "shopping-store",path = "/api/v1/shopping-store", fallback = StoreClientFallback.class)
 public interface StoreFeignClient {
 
     @GetMapping

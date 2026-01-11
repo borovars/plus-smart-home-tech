@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: "jdbc:postgresql://localhost:6536/order"
+    username: order
+    password: order
+    driver-class-name: "org.postgresql.Driver"
+  jpa:
+    hibernate:
+      ddl-auto: create
+      dialect: "org.hibernate.dialect.PostgreSQLDialect"
+    show-sql: false
+  sql:
+    init:
+      mode: always

@@ -99,3 +99,54 @@ services:
       retries: 10
     volumes:
       - ./docker/postgres/cart.sql:/docker-entrypoint-initdb.d/init.sql
+
+  delivery-db:
+    image: postgres:16.1
+    container_name: delivery-db
+    ports:
+      - "6535:5432"
+    environment:
+      - POSTGRES_DB=delivery
+      - POSTGRES_USER=delivery
+      - POSTGRES_PASSWORD=delivery
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    volumes:
+      - ./docker/postgres/delivery.sql:/docker-entrypoint-initdb.d/init.sql
+
+  order-db:
+    image: postgres:16.1
+    container_name: order-db
+    ports:
+      - "6536:5432"
+    environment:
+      - POSTGRES_DB=order
+      - POSTGRES_USER=order
+      - POSTGRES_PASSWORD=order
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    volumes:
+      - ./docker/postgres/order.sql:/docker-entrypoint-initdb.d/init.sql
+
+  payment-db:
+    image: postgres:16.1
+    container_name: payment-db
+    ports:
+      - "6537:5432"
+    environment:
+      - POSTGRES_DB=payment
+      - POSTGRES_USER=payment
+      - POSTGRES_PASSWORD=payment
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    volumes:
+      - ./docker/postgres/payment.sql:/docker-entrypoint-initdb.d/init.sql
